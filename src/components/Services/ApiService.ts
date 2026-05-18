@@ -7,9 +7,10 @@ export class ApiService {
     this.api = api;
   }
 
-  async getProducts(): Promise<IProduct[]> {
-    return this.api.get<IProductsResponse>('/product/').then(data => data.items)
-  }
+  async getProducts(): Promise<IProductsResponse> {
+  return this.api.get<IProductsResponse>('/product/');
+}
+
 
 
   async orderProducts(order: IOrder): Promise<IOrderConfirmation> {

@@ -1,3 +1,4 @@
+import './scss/styles.scss'; 
 import { Products } from './components/Models/Products';
 import { Cart } from './components/Models/Cart';
 import { Buyer } from './components/Models/Buyer';
@@ -5,7 +6,7 @@ import { ApiService } from './components/Services/ApiService';
 import { apiProducts } from './utils/data';
 import { API_URL } from './utils/constants';
 import { Api } from './components/base/Api';
-
+import { IProduct, IProductsResponse } from './types/index';
 // Создание экземпляров классов
 const productsModel = new Products();
 const cartModel = new Cart();
@@ -97,23 +98,19 @@ console.log('Данные после очистки:', buyerModel.getData());
 
 //  Тестирование взаимодейсвия с сервером
 console.log('\n=== ТЕСТИРОВАНИЕ ВЗАИМОДЕЙСТВИЯ С СЕРВЕРОМ ===');
-const apiClient = new Api(API_URL);
-const apiService = new ApiService(apiClient);
-const products = new Products();
+const api = new Api(API_URL);
+const apiService = new ApiService(api);
 
-async function loadProducts() {
+async function loadAndLogProducts() {
   try {
-    const productList = await apiService.getProducts();
-    products.setItems(productList);
-    console.log('Товары успешно загружены:', {
-      count: productList.length,
-      sample: productList
-    });
+    const response: IProductsResponse = await apiService.getProducts();
+    const products: IProduct[] = response.items;
+
+    console.log('Список товаров:', products);
+    console.log('Общее количество товаров:', response.total);
   } catch (error) {
-    console.error('Критическая ошибка загрузки товаров:', error);
+    console.error('Ошибка при загрузке товаров:', error);
   }
 }
-(async () => {
-  await loadProducts();
-  console.log('Тестирование завершено.');
-})();
+
+loadAndLogProducts();

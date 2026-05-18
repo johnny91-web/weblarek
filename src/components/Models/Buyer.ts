@@ -1,4 +1,4 @@
-import { IBuyer, TPayment } from '../../types/index';
+import { IBuyer, TPayment, IBuyerValidationErrors } from '../../types/index';
 
 export class Buyer {
   private payment: TPayment | null = null;
@@ -12,7 +12,7 @@ export class Buyer {
 
   getData(): IBuyer {
     return {
-      payment: this.payment!,
+      payment: this.payment,
       email: this.email,
       phone: this.phone,
       address: this.address
@@ -26,13 +26,13 @@ export class Buyer {
     this.address = '';
   }
 
-  validate(): { [key in keyof IBuyer]?: string } {
-    const errors: { [key in keyof IBuyer]?: string } = {};
+  validate(): IBuyerValidationErrors {
+  const errors: IBuyerValidationErrors = {};
 
     if (!this.payment) errors.payment = 'Не выбран вид оплаты';
-    if (!this.email) errors.email = 'Укажите email';
-    if (!this.phone) errors.phone = 'Укажите телефон';
-    if (!this.address) errors.address = 'Укажите адрес доставки';
+    if (!this.email.trim()) errors.email = 'Укажите email';
+    if (!this.phone.trim()) errors.phone = 'Укажите телефон';
+    if (!this.address.trim()) errors.address = 'Укажите адрес доставки';
 
     return errors;
   }

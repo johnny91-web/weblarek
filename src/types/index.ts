@@ -15,7 +15,7 @@ export interface IProduct {
 }
 
 export interface IBuyer {
-  payment: TPayment;
+  payment: TPayment | null;
   email: string;
   phone: string;
   address: string;
@@ -23,9 +23,10 @@ export interface IBuyer {
 
 export type TPayment = 'card' | 'cash';
 
-export interface IOrder {
-  products: IProduct[];
-  buyer: IBuyer;
+export interface IOrder extends IBuyer{
+    total: number;
+    items: string[];
+
 }
 // Типы для ответов сервера
 export interface IProductsResponse {
@@ -38,4 +39,11 @@ export interface IOrderConfirmation {
   orderId: string;
   totalAmount: number;
   status: 'confirmed' | 'pending' | 'failed';
+}
+
+ export interface IBuyerValidationErrors {
+  payment?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
 }
