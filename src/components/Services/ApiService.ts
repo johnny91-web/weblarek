@@ -1,4 +1,4 @@
-import { IApi, IProductsResponse, IOrder, IOrderConfirmation, IProduct } from '../../types/index';
+import { IApi, IProductsResponse, IOrder, IOrderConfirmation } from '../../types/index';
 
 export class ApiService {
   private api: IApi;

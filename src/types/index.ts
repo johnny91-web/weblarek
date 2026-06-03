@@ -37,7 +37,7 @@ export interface IProductsResponse {
 
 export interface IOrderConfirmation {
   orderId: string;
-  totalAmount: number;
+  total: number;
   status: 'confirmed' | 'pending' | 'failed';
 }
 
@@ -46,4 +46,39 @@ export interface IOrderConfirmation {
   email?: string;
   phone?: string;
   address?: string;
+}
+
+export interface IBasket {
+  items: HTMLElement[];
+  price: number;
+}
+
+export interface ICardActions {
+  onClick?: (event: MouseEvent) => void;
+  onButtonClick?: (event: MouseEvent) => void;
+}
+
+export interface IForm {
+  valid: boolean;
+  errors: string[];
+}
+
+export interface IGallery {
+  catalog: HTMLElement[];
+}
+
+export interface IHeader {
+  counter: number;
+}
+
+export interface IModal {
+  content: HTMLElement;
+}
+
+export interface ISuccess {
+  total: number;
+}
+
+export interface ISuccessActions {
+  onClick: () => void;
 }

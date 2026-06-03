@@ -220,18 +220,292 @@ Presenter - презентер содержит основную логику п
 Представляет коммуникационный слой приложения, отвечает за взаимодействие с сервером через API.
 
 Конструктор:
-   `constructor(api: IApi)`
+`constructor(api: IApi)`
+
 Параметры:
 `api: IApi` — экземпляр класса, реализующий интерфейс IApi. 
 
 Поле:
-
 `private api: IApi` — хранит ссылку на объект API для выполнения запросов.
 
 Методы:
-
 `async getProducts(): Promise<IProduct[]>` — загружает список товаров с сервера. Возвращает промис, который разрешается в массив IProduct[].
-
 `async createOrder(order: IOrder): Promise<IOrderConfirmation>` — отправляет заказ на сервер. Параметр: order (IOrder). Возвращает промис с подтверждением заказа (IOrderConfirmation).
 
 
+### Cлой View
+
+#### Класс Basket
+Представляет компонент корзины покупок в интерфейсе, отвечает за отображение товаров, общей стоимости и управление кнопкой оформления заказа.
+
+Конструктор:
+`constructor(container: HTMLElement, protected events: IEvents)`
+
+Параметры:
+`container: HTMLElement` — корневой DOM‑элемент компонента корзины.
+`events: IEvents` — экземпляр брокера событий для отправки событий в систему.
+
+Поле:
+`private basketListElement: HTMLElement` — контейнер для списка товаров (.basket__list).
+`private placeButton: HTMLButtonElement `— кнопка оформления заказа (.basket__button).
+`private priceElement: HTMLElement `— элемент для отображения общей цены (.basket__price).
+
+Методы:
+`set items(value: HTMLElement[])` — обновляет список товаров в корзине. Если массив пуст, отображает сообщение «Корзина пуста».
+`set price(value: number)` — обновляет отображение общей стоимости корзины в формате ${value} синапсов.
+`setPurchaseOpportunity(isEmpty: boolean)` — управляет доступностью кнопки оформления заказа:
+`при isEmpty = true `отключает кнопку и добавляет класс button_disabled;
+`при isEmpty = false` включает кнопку и убирает класс button_disabled.
+`render(data?: Partial<IBasket>): HTMLElement (унаследован от Component<IBasket>)` — рендерит компонент с переданными данными.
+
+Параметры:
+
+`data?: Partial<IBasket>` — опциональные данные для отображения:
+`items?: HTMLElement[] `— массив DOM‑элементов товаров;
+`price?: number` — общая стоимость корзины.
+Возвращает: HTMLElement — корневой элемент container.
+
+
+
+#### Класс Card<T>
+Абстрактный базовый класс для компонентов карточек товаров — отображает название и цену.
+
+Тип:
+
+`TCard = Pick<IProduct, 'title' | 'price'>` — содержит поля title и price из IProduct.
+
+Конструктор:
+`constructor(container: HTMLElement)`
+Параметр: container — корневой DOM‑элемент карточки.
+
+Поля:
+
+`protected titleElement: HTMLElement` — элемент .card__title (название);
+
+`protected priceElement: HTMLElement` — элемент .card__price (цена).
+
+Сеттеры:
+
+`set title(value: string)` - Устанавливает текст названия в titleElement.textContent.
+
+
+`set price(value: number | null)` - Если value не null — отображает ${value} синапсов (например, 1500 синапсов).
+Если value === null — отображает «Бесценно».
+
+
+#### Класс CardBasket
+Класс для отображения карточки товара в корзине. Наследует базовую функциональность от Card, добавляет поля номера позиции и кнопки удаления.
+
+Конструктор:
+
+`constructor(container: HTMLElement)`
+Параметр: `container` — корневой DOM‑элемент карточки товара в корзине.
+
+Поля класса:
+`protected indexElement: HTMLElement` — элемент .basket__item-index для отображения номера позиции;
+`protected deleteButton: HTMLButtonElement` — кнопка .basket__item-delete для удаления товара;
+`protected _id?: string` — идентификатор товара (внутреннее поле).
+
+Методы:
+
+`getDeleteButton(): HTMLButtonElement` - Возвращает: кнопку удаления (deleteButton) для внешних обработчиков.
+`set index(value: number)` - Назначение: устанавливает номер позиции товара в корзине.
+`set id(value: string)` - Назначение: сохраняет идентификатор товара во внутреннее поле _id.
+`render(data: TCardBasket): HTMLElement` -
+   Параметр: data — объект с данными товара (TCardBasket).
+   Логика:
+   если data.index задан, устанавливает номер позиции через сеттер index;
+   если data.id задан, сохраняет ID через сеттер id;
+   вызывает super.render(data) для отображения title и price (наследует от Card);
+   возвращает корневой элемент container.
+   Возвращает: HTMLElement — отрисованную карточку.
+`setDeleteHandler(onRemove: () => void): void` - для привязки события удаления к карточке
+   Параметр: onRemove — функция‑обработчик клика по кнопке удаления.
+   Логика: добавляет обработчик события click на кнопку deleteButton, который вызывает onRemove.
+   
+
+#### Класс CardCatalog
+Класс для отображения карточки товара в каталоге. Наследует базовую функциональность от Card, добавляет отображение категории и изображения товара.
+
+Конструктор:
+`constructor(container: HTMLElement, actions?: ICardActions)`
+Параметры:
+`container` — корневой DOM‑элемент карточки;
+`actions?.onClick` (опционально) — обработчик клика по карточке.
+
+Поля класса:
+`protected categoryElement: HTMLElement` — элемент .card__category для отображения категории;
+`protected imageElement: HTMLImageElement` — элемент .card__image для отображения изображения.
+
+Методы и сеттеры:
+`set category(value: string)` - устанавливает текст категории в categoryElement.textContent. применяет CSS‑класс из categoryMap в зависимости от значения value.
+
+`set image(value: string)` - формирует URL изображения через CDN_URL;
+изменяет расширение файла (убирает последние 3 символа и добавляет 'png');
+задаёт изображение через setImage() с альтернативным текстом (titleElement.textContent). 
+
+
+#### Класс Form
+Базовый класс для форм интерфейса. Управляет валидацией, отображением ошибок и отправкой данных.
+
+Конструктор:
+`constructor(container: HTMLFormElement, events: IEvents)`
+Параметры:
+`container` — корневой элемент формы (HTMLFormElement);
+`events` — экземпляр системы событий для эмита действий.
+
+Поля класса:
+`protected formElement: HTMLFormElement` — элемент формы;
+`protected submitButton: HTMLButtonElement` — кнопка отправки (type="submit");
+`protected errorsContainer: HTMLElement` — контейнер для отображения ошибок (.form__errors).
+
+Методы и сеттеры:
+`set valid(value: boolean)` - включает/отключает кнопку отправки формы.
+если value === false, кнопка блокируется и получает класс button_disabled;
+если value === true, кнопка разблокируется и класс убирается.
+`set errors(value: string[])` - отображает ошибки валидации в интерфейсе.
+
+
+#### Класс ContactsForm
+Специализированный класс формы для ввода контактных данных (email и телефона). Наследует базовую функциональность от Form.
+Конструктор:
+
+`constructor(container: HTMLFormElement, events: IEvents)`
+Параметры:
+`container` — корневой элемент формы (HTMLFormElement);
+`events` — экземпляр системы событий для эмита действий.
+
+Поля класса:
+`protected emailElement: HTMLInputElement` — поле ввода email (input[name="email"]);
+`protected phoneElement: HTMLInputElement` — поле ввода телефона (input[name="phone"]).
+
+Методы и сеттеры:
+`set email(value: string)` - устанавливает значение поля email.
+`set phone(value: string)` - устанавливает значение поля телефона.
+
+
+#### Класс OrderForm
+Специализированный класс формы для оформления заказа. Наследует базовую функциональность от Form, добавляет поля выбора способа оплаты и ввода адреса. 
+
+Конструктор:
+
+
+`constructor(container: HTMLFormElement, events: IEvents)`
+Параметры:
+`container` — корневой элемент формы (HTMLFormElement);
+`events`— экземпляр системы событий для эмита действий.
+
+Поля класса:
+`protected paymentButtons: HTMLButtonElement[]` — массив кнопок выбора способа оплаты (button[name]);
+`protected addressElement: HTMLInputElement` — поле ввода адреса (input[name="address"]).
+
+Методы и сеттеры:
+`set payment(value: string)` - выделяет активную кнопку способа оплаты.
+`set address(value: string)` -  устанавливает значение поля адреса.
+
+#### Класс Gallery
+Класс для отображения галереи элементов (карточек товаров). Управляет содержимым контейнера: очищает его и добавляет новые элементы.
+
+Конструктор:
+`constructor(container: HTMLElement)`
+Параметр:
+`container` — корневой элемент галереи (HTMLElement), в котором будут отображаться элементы.
+
+Поля класса:
+Наследуются от базового класса Component.
+
+Методы:
+
+`set catalog(items: HTMLElement[])` - обновляет содержимое галереи, заменяя текущие элементы на новые.
+Параметр: items — массив DOM‑элементов (HTMLElement[]), которые нужно отобразить 
+
+#### Класс Header
+Класс для отображения шапки интерфейса с кнопкой корзины и счётчиком товаров. Управляет отображением количества товаров и обработкой открытия корзины.
+Конструктор:
+`constructor(container: HTMLElement, events: IEvents)`
+Параметры:
+`container` — корневой элемент шапки (HTMLElement);
+`events` — экземпляр системы событий для эмита действий.
+
+Поля класса:
+`protected counterElement: HTMLElement` — элемент отображения количества товаров в корзине 
+`protected basketButton: HTMLButtonElement` — кнопка открытия корзины 
+
+Методы:
+`set counter(value: number)` - устанавливает количество товаров в корзине на интерфейсе.
+
+#### Класс Modal
+Класс для управления модальным окном: открытия, закрытия и установки содержимого. 
+
+Конструктор:
+`constructor(container: HTMLElement, events: IEvents)`
+Параметры:
+`container` — корневой элемент модального окна (HTMLElement);
+`events` — экземпляр системы событий для эмита действий.
+
+Поля класса:
+`protected closeButton: HTMLButtonElement` — кнопка закрытия ('.modal__close');
+`protected contentElement: HTMLElement` — контейнер для содержимого ('.modal__content').
+
+Методы и сеттеры:
+`set content(value: HTMLElement)` -  устанавливает содержимое модального окна.
+`open(): void` - открывает модальное окно.
+`close(): void` - закрывает модальное окно и очищает содержимое. 
+
+#### Класс Success
+Класс для отображения экрана успешного оформления заказа. Показывает итоговую сумму и содержит кнопку для закрытия.
+
+Конструктор:
+`constructor(container: HTMLElement, actions: ISuccessActions)`
+Параметры:
+`container` — корневой элемент экрана успеха (HTMLElement);
+`actions` — объект с обработчиками событий, содержит опциональный onClick.
+
+Поля класса:
+`protected orderButton: HTMLButtonElement` — кнопка закрытия экрана успеха (.order-success__close);
+`protected totalElement: HTMLElement `— элемент для отображения итоговой суммы (.order-success__description).
+
+Методы и сеттеры:
+`set total(value: number)` - отображает итоговую сумму списания в интерфейсе.
+
+### Presenter
+Поток данных и логика работы
+Шаг 1. Инициализация
+Создаются экземпляры всех классов (модели, UI‑компоненты, сервисы).
+Настраиваются обработчики событий через EventEmitter.
+
+Шаг 2. Загрузка товаров
+ApiService.getProducts() запрашивает данные с сервера.
+При успехе: productsModel.setItems() сохраняет товары, эмиттится событие products:updated.
+
+Шаг 3. Отображение каталога
+Событие products:updated запускает обновление галереи.
+Для каждого товара создаётся CardCatalog, рендерится и передаётся в Gallery.render().
+Шаг 4. Выбор товара
+Клик на карточке эмиттит card:selected.
+productsModel сохраняет выбранный товар, эмиттит product:selected.
+Открывается CardPreview в модальном окне (Modal) с кнопкой «В корзину»/«Убрать».
+
+Шаг 5. Работа с корзиной
+При добавлении/удалении товара эмиттится shopping-cart:changed.
+Обновляется счётчик в Header.
+Перерисовывается Basket с карточками CardBasket.
+Каждая карточка имеет кнопку удаления, эмиттящую shopping-cart:remove.
+
+Шаг 6. Оформление заказа
+
+Открытие корзины (shopping-cart:opened) показывает Basket в Modal.
+Переход к форме заказа (order:open) отображает OrderForm.
+Отправка формы (order:submit) переключает на ContactsForm.
+
+Шаг 7. Подтверждение заказа
+Отправка contacts:submit запускает apiService.orderProducts().
+При успехе создаётся Success, показывается итоговая сумма.
+Корзина очищается, данные покупателя сбрасываются, эмиттится shopping-cart:changed.
+
+
+Ключевые преимущества архитектуры:
+   чёткое разделение ответственности (модели, сервисы, UI);
+   слабая связанность компонентов через события;
+   гибкость: легко добавить новые типы карточек или шаги оформления;
+   поддержка реактивного обновления интерфейса.
