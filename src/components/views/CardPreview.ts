@@ -6,8 +6,6 @@ import { ensureElement } from "../../utils/utils";
 type CategoryKey = keyof typeof categoryMap;
 export type TCardPreview = Pick<IProduct, 'image' | 'category' | 'description'>;
 
-
-
 export class CardPreview extends Card<TCardPreview> {
   protected categoryElement: HTMLElement;
   protected imageElement: HTMLImageElement;
@@ -16,7 +14,7 @@ export class CardPreview extends Card<TCardPreview> {
 
   constructor(container: HTMLElement, actions?: ICardActions) {
     super(container);
-    
+
     this.categoryElement = ensureElement<HTMLElement>('.card__category', this.container);
     this.imageElement = ensureElement<HTMLImageElement>('.card__image', this.container);
     this.descriptionElement = ensureElement<HTMLElement>('.card__text', this.container);
@@ -28,17 +26,20 @@ export class CardPreview extends Card<TCardPreview> {
   }
 
   set category(value: string) {
+    Object.values(categoryMap).forEach(className => {
+      this.categoryElement.classList.remove(className);
+    });
+
     this.categoryElement.textContent = value;
-    for (const key in categoryMap) {
-      this.categoryElement.classList.toggle(
-        categoryMap[key as CategoryKey],
-        key == value
-      );
+
+    if (categoryMap[value as CategoryKey]) {
+      this.categoryElement.classList.add(categoryMap[value as CategoryKey]);
     }
   }
 
   set image(value: string) {
-    this.setImage(this.imageElement, CDN_URL + value.slice(0, -3) + 'png', this.titleElement.textContent);
+    const imageUrl = CDN_URL + value.slice(0, -3) + 'png';
+    this.setImage(this.imageElement, imageUrl, this.titleElement?.textContent || '');
   }
 
   set description(value: string) {
@@ -47,23 +48,10 @@ export class CardPreview extends Card<TCardPreview> {
 
   set disabled(value: boolean) {
     this.cardButton.disabled = value;
-    this.cardButton.classList.toggle('button_disabled', value);
   }
 
   set cardButtonText(value: string) {
     this.cardButton.textContent = value;
   }
 
-  setPurchaseOpportunity(isInShoppingCart: boolean, price: number | null) {
-    if (price === null) {
-      this.cardButtonText = 'Недоступно';
-      this.disabled = true;
-    } else if (isInShoppingCart) {
-      this.cardButtonText = 'Удалить из корзины';
-      this.disabled = false;
-    } else {
-      this.cardButtonText = 'В корзину';
-      this.disabled = false;
-    }
-  }
 }

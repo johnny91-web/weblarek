@@ -14,7 +14,7 @@ export class OrderForm extends Form {
     
     this.paymentButtons.forEach(button => {
       button.addEventListener('click', () => {
-        events.emit('order:changed', { 
+        events.emit('buyer-data:updated', { 
           field: 'payment', 
           value: button.getAttribute('name') || '' 
         });
@@ -22,7 +22,7 @@ export class OrderForm extends Form {
     });
     
     this.addressElement.addEventListener('input', () => {
-      events.emit('order:changed', { 
+      events.emit('buyer-data:updated', { 
         field: 'address', 
         value: this.addressElement.value 
       });

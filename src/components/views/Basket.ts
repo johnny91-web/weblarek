@@ -21,12 +21,7 @@ export class Basket extends Component<IBasket> {
   }
 
   set items(value: HTMLElement[]) {
-    this.basketListElement.innerHTML = '';
-    if (value.length === 0) {
-      this.basketListElement.innerHTML = '<p class="basket__empty">Корзина пуста</p>';
-    } else {
-      this.basketListElement.append(...value);
-    }
+    this.basketListElement.replaceChildren(...value);
   }
 
   set price(value: number) {
@@ -35,6 +30,5 @@ export class Basket extends Component<IBasket> {
 
   setPurchaseOpportunity(isEmpty: boolean) {
     this.placeButton.disabled = isEmpty;
-    this.placeButton.classList.toggle('button_disabled', isEmpty);
   }
 }
