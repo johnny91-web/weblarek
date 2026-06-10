@@ -12,7 +12,7 @@ export class Buyer {
   updateData(data: Partial<IBuyer>): void {
     Object.assign(this, data);
     // Эмит события об изменении данных покупателя
-    this.events.emit('buyer-data:updated', { field: Object.keys(data)});
+    this.events.emit('buyer:data-updated', { field: Object.keys(data)});
   }
 
   getData(): IBuyer {
@@ -30,7 +30,7 @@ export class Buyer {
     this.phone = '';
     this.address = '';
     // Эмит события после очистки данных
-    this.events.emit('buyer-data:updated', { field: 'all' });
+    this.events.emit('data-cleared', { field: 'all' });
   }
 
   validate(): IBuyerValidationErrors {

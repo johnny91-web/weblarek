@@ -13,14 +13,14 @@ export class ContactsForm extends Form {
     this.phoneElement = ensureElement<HTMLInputElement>('input[name="phone"]', this.container);
 
     this.emailElement.addEventListener('input', () => {
-      events.emit('buyer-data:updated', { 
+      events.emit('form:data-changed', { 
         field: 'email', 
         value: this.emailElement.value 
       });
     });
 
     this.phoneElement.addEventListener('input', () => {
-      events.emit('buyer-data:updated', { 
+      events.emit('form:data-changed', { 
         field: 'phone', 
         value: this.phoneElement.value 
       });

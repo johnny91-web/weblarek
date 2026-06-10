@@ -1,5 +1,5 @@
 import './scss/styles.scss';
-import { IProduct, IProductsResponse, IBuyerValidationErrors, IBuyer, TPayment} from './types/index';
+import { IProduct, IProductsResponse, TPayment} from './types/index';
 import { EventEmitter } from './components/base/Events';
 import { Products } from './components/Models/Products';
 import { Gallery } from './components/views/Gallery';
@@ -69,10 +69,7 @@ events.on('products:updated', () => {
     return cardCatalog.render(item);
   });
   gallery.render({ catalog: items });
-  //проверяем состояние корзины для деактивации кнопки "оформить"
-  const isEmpty = cart.getItemCount() === 0;
-  basket.setPurchaseOpportunity(isEmpty);
-  basket.price = cart.getTotalPrice() || 0;
+  
 });
 
 // Выбор товара — устанавливаем выбранный товар
@@ -100,17 +97,15 @@ events.on('card-button:clicked', () => {
   if (!selectedProduct) return;
 
   if (cart.hasItem(selectedProduct.id)) {
-    events.emit('shopping-cart:remove', { id: selectedProduct.id });
+    // Вызываем метод напрямую
+    cart.removeItem(selectedProduct.id);
   } else if (selectedProduct.price !== null && selectedProduct.price !== undefined) {
-    events.emit('shopping-cart:add', { item: selectedProduct });
+    // Вызываем метод напрямую
+    cart.addItem(selectedProduct);
   }
   modal.close();
 });
 
-// Добавление товара в корзину
-events.on('shopping-cart:add', (data: { item: IProduct }) => {
-  cart.addItem(data.item);
-});
 
 // Удаление товара из корзины
 events.on('shopping-cart:remove', (data: { id: string }) => {
@@ -120,20 +115,17 @@ events.on('shopping-cart:remove', (data: { id: string }) => {
 // Корзина
 events.on('shopping-cart:changed', () => {
   header.counter = cart.getItemCount();
-
   const cartItems = cart.getCartItems()
     .map((item, index) => {
       const cardBasket = new CardBasket(cloneTemplate('#card-basket'), () => {
         events.emit('shopping-cart:remove', { id: item.id });
       });
-
       const renderedElement = cardBasket.render({
         id: item.id,
         title: item.title,
         price: item.price,
         index: index + 1,
       });
-
       return renderedElement;
     });
 
@@ -141,17 +133,11 @@ events.on('shopping-cart:changed', () => {
   basket.price = cart.getTotalPrice() || 0;
   const isEmpty = cart.getItemCount() === 0;
   basket.setPurchaseOpportunity(isEmpty);
-
-  const selectedProduct = productsModel.getSelectedProduct();
-  if (selectedProduct) {
-    updateCardButtonState(selectedProduct);
-  }
 });
 
 function updateCardButtonState(product: IProduct): void {
   let buttonText: string;
   let isDisabled: boolean;
-
   if (product.price === null || product.price === undefined) {
     buttonText = 'Недоступно';
     isDisabled = true;
@@ -162,34 +148,49 @@ function updateCardButtonState(product: IProduct): void {
     buttonText = 'В корзину';
     isDisabled = false;
   }
-
   cardPreview.cardButtonText = buttonText;
   cardPreview.disabled = isDisabled;
 }
 
 // Обработчик открытия корзины
 events.on('shopping-cart:open', () => {
+  const isEmpty = cart.getItemCount() === 0; 
+  basket.setPurchaseOpportunity(isEmpty);
   modal.content = basket.render();
-  modal.open();
+  modal.open();  
 });
 
-      // Формы
-      
-      
-events.on('buyer-data:updated', (data: { field: string; value: string }) => {
-  console.log('Получены данные покупателя:', data);
+  // Формы
+// Обработчик изменения способа оплаты      
+events.on('order-form:payment-selected', (data: { value: string }) => {
+  buyerModel.updateData({ payment: data.value as TPayment });
+});
 
-  // Обновляем модель Buyer
-  if (data.field === 'payment') {
-    buyerModel.updateData({ payment: data.value as TPayment });
-  } else if (data.field === 'address') {
-    buyerModel.updateData({ address: data.value });
-  } else if (data.field === 'email') {
-    buyerModel.updateData({ email: data.value });
-  } else if (data.field === 'phone') {
-    buyerModel.updateData({ phone: data.value });
-  }
+// Обработчик изменения адреса (от формы заказа)
+events.on('order-form:address-changed', (data: { value: string }) => {
+  buyerModel.updateData({ address: data.value });
+});
 
+// Обработчик изменений email (от формы контактов)
+events.on('contacts-form:email-changed', (data: { value: string }) => {
+  buyerModel.updateData({ email: data.value });
+});
+
+// Обработчик изменений телефона (от формы контактов)
+events.on('contacts-form:phone-changed', (data: { value: string }) => {
+  buyerModel.updateData({ phone: data.value });
+});
+
+// Обработчик событий от форм (представление → модель)
+events.on('form:data-changed', (data: { field: string; value: string }) => {
+  console.log('Получены данные от формы:', data);
+
+  // Передаём данные в модель Buyer
+  buyerModel.updateData({ [data.field]: data.value });
+});
+
+// Обработчик события от модели Buyer (модель → представление)
+events.on('buyer:data-updated', () => {
   const buyerData = buyerModel.getData();
   const validation = buyerModel.validate();
 
@@ -197,9 +198,12 @@ events.on('buyer-data:updated', (data: { field: string; value: string }) => {
   if (currentOrderForm) {
     currentOrderForm.payment = buyerData.payment || '';
     currentOrderForm.address = buyerData.address || '';
+
     const paymentValid = !validation.payment && !validation.address;
     currentOrderForm.valid = paymentValid;
-    const orderErrors = [validation.payment, validation.address].filter(Boolean) as string[];
+
+    const orderErrors = [validation.payment, validation.address]
+      .filter(Boolean) as string[];
     currentOrderForm.errors = orderErrors;
   }
 
@@ -207,9 +211,12 @@ events.on('buyer-data:updated', (data: { field: string; value: string }) => {
   if (currentContactsForm) {
     currentContactsForm.email = buyerData.email || '';
     currentContactsForm.phone = buyerData.phone || '';
+
     const contactsValid = !validation.email && !validation.phone;
     currentContactsForm.valid = contactsValid;
-    const contactsErrors = [validation.email, validation.phone].filter(Boolean) as string[];
+
+    const contactsErrors = [validation.email, validation.phone]
+      .filter(Boolean) as string[];
     currentContactsForm.errors = contactsErrors;
   }
 });
@@ -232,27 +239,21 @@ events.on("order:submit", () => {
 // Отправка заказа
 events.on("contacts:submit", () => {
   const buyerData = buyerModel.getData();
-  const validation = buyerModel.validate();
+  const orderData = {
+    ...buyerData,
+    items: cart.getCartItems().map((item) => item.id),
+    total: cart.getTotalPrice(),
+  };
 
-  if (!validation.email && !validation.phone) {
-    const orderData = {
-      ...buyerData,
-      items: cart.getCartItems().map((item) => item.id),
-      total: cart.getTotalPrice(),
-    };
-
-    apiService.orderProducts(orderData)
-      .then(() => {
-        success.total = cart.getTotalPrice();
-        modal.content = success.render();
-        modal.open();
-
-        buyerModel.clearData();
-        cart.clearCart();
-        events.emit('shopping-cart:changed');
-      })
-      .catch((error) => {
-        console.error("Ошибка при оформлении заказа:", error);
-      });
-    }
+  apiService.orderProducts(orderData)
+    .then(() => {
+      success.total = cart.getTotalPrice();
+      modal.content = success.render();
+      modal.open();
+      buyerModel.clearData();
+      cart.clearCart();
+    })
+    .catch((error) => {
+      console.error("Ошибка при оформлении заказа:", error);    
+    });
 });
